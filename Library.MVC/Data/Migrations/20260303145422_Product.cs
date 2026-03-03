@@ -5,13 +5,13 @@
 namespace Library.MVC.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class Product : Migration
+    public partial class Book : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "Products",
+                name: "Books",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -20,7 +20,7 @@ namespace Library.MVC.Data.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Products", x => x.Id);
+                    table.PrimaryKey("PK_Books", x => x.Id);
                 });
         }
 
@@ -28,7 +28,7 @@ namespace Library.MVC.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Products");
+                name: "Books");
         }
     }
 }
