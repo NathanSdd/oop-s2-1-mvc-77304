@@ -1,18 +1,22 @@
 ﻿using Library.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography.X509Certificates;
 
 namespace Library.MVC.Data
 {
-    
-    
-        public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : IdentityDbContext(options)
-            
+    public class ApplicationDbContext : IdentityDbContext
+    {
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
-        public DbSet<Book> Books { get; set; }
         }
 
-    
-    
+        public DbSet<Product> Products { get; set; }
+
+        public DbSet<Customer> Customers { get; set; }
+
+        public DbSet<Invoice> Invoices { get; set; }
+
+        public DbSet<InvoiceLine> InvoiceLines { get; set; }
+    }
 }
