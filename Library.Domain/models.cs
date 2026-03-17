@@ -1,54 +1,39 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Library.Domain
+﻿namespace Library.Domain
 {
-
-
-    public class Customer
+    public class Book
     {
         public int Id { get; set; }
-        public string Name { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Author { get; set; } = "";
+        public string Isbn { get; set; } = "";
+        public string Category { get; set; } = "";
+        public bool IsAvailable { get; set; } = true;
 
-        public List<Invoice> Invoices { get; set; } = new();
+        public List<Loan> Loans { get; set; } = new();
     }
 
-    public class InvoiceLine
+    public class Member
     {
         public int Id { get; set; }
+        public string FullName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Phone { get; set; } = "";
 
-        // FK to Invoice
-        public int InvoiceId { get; set; }
-        public Invoice? Invoice { get; set; }
-
-        // FK to Product
-        public int ProductId { get; set; }
-        public Product? Product { get; set; }
-
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; } // snapshot price at time of invoice
+        public List<Loan> Loans { get; set; } = new();
     }
 
-    public class Invoice
+    public class Loan
     {
         public int Id { get; set; }
-        public DateTime InvoiceDate { get; set; } = DateTime.UtcNow;
 
-        // FK to Customer
-        public int CustomerId { get; set; }
-        public Customer? Customer { get; set; }
+        public int BookId { get; set; }
+        public Book? Book { get; set; }
 
-        public List<InvoiceLine> Lines { get; set; } = new();
-    }
+        public int MemberId { get; set; }
+        public Member? Member { get; set; }
 
-    public class Product
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public decimal UnitPrice { get; set; }
-        public List<InvoiceLine> InvoiceLines { get; set; } = new();
+        public DateTime LoanDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public DateTime? ReturnedDate { get; set; }
     }
 }

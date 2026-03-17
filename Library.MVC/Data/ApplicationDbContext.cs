@@ -11,12 +11,8 @@ namespace Library.MVC.Data
         {
         }
 
-        public DbSet<Product> Products { get; set; }
-
-        public DbSet<Customer> Customers { get; set; }
-
-        public DbSet<Invoice> Invoices { get; set; }
-
-        public DbSet<InvoiceLine> InvoiceLines { get; set; }
+        public DbSet<Book> Books { get; set; }
+        public DbSet<Member> Members { get; set; }
+        public DbSet<Loan> Loans { get; set; }
     }
 }
