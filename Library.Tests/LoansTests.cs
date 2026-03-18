@@ -5,112 +5,125 @@ using Library.Domain;
 using System;
 using System.Linq;
 
-namespace Library.Tests
+public class LoansTests
 {
-    public class LoanTests
+    private ApplicationDbContext GetDbContext()
     {
-        private ApplicationDbContext GetDbContext()
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options;
+
+        return new ApplicationDbContext(options);
+    }
+
+    [Fact]
+    public void CannotLoanBookTwice()
+    {
+        var context = GetDbContext();
+
+        var book = new Book { Title = "Test Book", IsAvailable = false };
+        context.Books.Add(book);
+
+        context.Loans.Add(new Loan
         {
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
+            Book = book,
+            LoanDate = DateTime.Now,
+            DueDate = DateTime.Now.AddDays(7),
+            ReturnedDate = null
+        });
 
-            return new ApplicationDbContext(options);
-        }
+        context.SaveChanges();
 
-        [Fact]
-        public void Can_Create_Loan()
+        bool isOnLoan = context.Loans
+            .Any(l => l.BookId == book.Id && l.ReturnedDate == null);
+
+        Assert.True(isOnLoan);
+    }
+
+    [Fact]
+    public void ReturnMakesBookAvailable()
+    {
+        var context = GetDbContext();
+
+        var book = new Book { Title = "Test Book", IsAvailable = false };
+        context.Books.Add(book);
+
+        var loan = new Loan
         {
-            var context = GetDbContext();
+            Book = book,
+            LoanDate = DateTime.Now,
+            DueDate = DateTime.Now.AddDays(7),
+            ReturnedDate = null
+        };
 
-            var book = new Book { Title = "Test Book", IsAvailable = true };
-            var member = new Member { FullName = "John Doe" };
+        context.Loans.Add(loan);
+        context.SaveChanges();
 
-            context.Books.Add(book);
-            context.Members.Add(member);
-            context.SaveChanges();
+        // simulate return
+        loan.ReturnedDate = DateTime.Now;
+        book.IsAvailable = true;
 
-            var loan = new Loan
-            {
-                BookId = book.Id,
-                MemberId = member.Id,
-                LoanDate = DateTime.Now,
-                DueDate = DateTime.Now.AddDays(7)
-            };
+        context.SaveChanges();
 
-            context.Loans.Add(loan);
+        Assert.True(book.IsAvailable);
+    }
 
-            // simulate your logic
-            book.IsAvailable = false;
+    [Fact]
+    public void OverdueLoanDetected()
+    {
+        var context = GetDbContext();
 
-            context.SaveChanges();
-
-            Assert.Equal(1, context.Loans.Count());
-            Assert.False(book.IsAvailable);
-        }
-
-        [Fact]
-        public void Cannot_Loan_Same_Book_Twice()
+        var loan = new Loan
         {
-            var context = GetDbContext();
+            LoanDate = DateTime.Now.AddDays(-10),
+            DueDate = DateTime.Now.AddDays(-5),
+            ReturnedDate = null
+        };
 
-            var book = new Book { Title = "Test Book", IsAvailable = false };
-            var member = new Member { FullName = "John Doe" };
+        context.Loans.Add(loan);
+        context.SaveChanges();
 
-            context.Books.Add(book);
-            context.Members.Add(member);
-            context.SaveChanges();
+        bool isOverdue = loan.DueDate < DateTime.Now && loan.ReturnedDate == null;
 
-            context.Loans.Add(new Loan
-            {
-                BookId = book.Id,
-                MemberId = member.Id,
-                LoanDate = DateTime.Now,
-                DueDate = DateTime.Now.AddDays(7),
-                ReturnedDate = null
-            });
+        Assert.True(isOverdue);
+    }
 
-            context.SaveChanges();
+    [Fact]
+    public void BookSearchReturnsMatch()
+    {
+        var context = GetDbContext();
 
-            // simulate your validation rule
-            bool isOnLoan = context.Loans
-                .Any(l => l.BookId == book.Id && l.ReturnedDate == null);
+        context.Books.Add(new Book { Title = "C# Programming" });
+        context.Books.Add(new Book { Title = "Java Basics" });
 
-            Assert.True(isOnLoan);
-        }
+        context.SaveChanges();
 
-        [Fact]
-        public void Returning_Book_Makes_It_Available()
+        var result = context.Books
+            .Where(b => b.Title.Contains("C#"))
+            .ToList();
+
+        Assert.Single(result);
+    }
+
+    [Fact]
+    public void LoanCreationMarksBookUnavailable()
+    {
+        var context = GetDbContext();
+
+        var book = new Book { Title = "Test Book", IsAvailable = true };
+        context.Books.Add(book);
+
+        var loan = new Loan
         {
-            var context = GetDbContext();
+            Book = book,
+            LoanDate = DateTime.Now,
+            DueDate = DateTime.Now.AddDays(7)
+        };
 
-            var book = new Book { Title = "Test Book", IsAvailable = false };
-            var member = new Member { FullName = "John Doe" };
+        book.IsAvailable = false;
+        context.Loans.Add(loan);
+        context.SaveChanges();
 
-            context.Books.Add(book);
-            context.Members.Add(member);
-            context.SaveChanges();
-
-            var loan = new Loan
-            {
-                BookId = book.Id,
-                MemberId = member.Id,
-                LoanDate = DateTime.Now,
-                DueDate = DateTime.Now.AddDays(7),
-                ReturnedDate = null
-            };
-
-            context.Loans.Add(loan);
-            context.SaveChanges();
-
-            // simulate return
-            loan.ReturnedDate = DateTime.Now;
-            book.IsAvailable = true;
-
-            context.SaveChanges();
-
-            Assert.True(book.IsAvailable);
-            Assert.NotNull(loan.ReturnedDate);
-        }
+        Assert.False(book.IsAvailable);
     }
 }

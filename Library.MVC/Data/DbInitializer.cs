@@ -9,68 +9,97 @@ namespace Library.MVC.Data
     {
         public static void Seed(ApplicationDbContext context)
         {
-            if (context.Books.Any() || context.Members.Any() || context.Loans.Any())
+            context.Database.EnsureCreated();
+
+            // CLEAR DATA
+            context.Loans.RemoveRange(context.Loans);
+            context.Books.RemoveRange(context.Books);
+            context.Members.RemoveRange(context.Members);
+            context.SaveChanges();
+
+            // BOOKS (20)
+            var books = new List<Book>();
+
+            for (int i = 1; i <= 20; i++)
             {
-                return; // DB already seeded
+                books.Add(new Book
+                {
+                    Title = $"Book {i}",
+                    Author = $"Author {i}",
+                    Category = "Fiction",
+                    Isbn = $"ISBN-{i}",
+                    IsAvailable = true
+                });
             }
-            // Clear existing data if needed
-            //context.Loans.RemoveRange(context.Loans);
-            //context.Books.RemoveRange(context.Books);
-            //context.Members.RemoveRange(context.Members);
-            //context.SaveChanges();
 
-            //  Books
-            var bookFaker = new Faker<Book>()
-                .RuleFor(b => b.Title, f => f.Commerce.ProductName())
-                .RuleFor(b => b.Author, f => f.Name.FullName())
-                .RuleFor(b => b.Isbn, f => f.Random.Replace("###-##########"))
-                .RuleFor(b => b.Category, f => f.PickRandom("Fiction", "Science", "History"))
-                .RuleFor(b => b.IsAvailable, true);
-
-            var books = bookFaker.Generate(20);
             context.Books.AddRange(books);
-            context.SaveChanges(); 
 
-            // Members
-            var memberFaker = new Faker<Member>()
-                .RuleFor(m => m.FullName, f => f.Name.FullName())
-                .RuleFor(m => m.Email, f => f.Internet.Email())
-                .RuleFor(m => m.Phone, f => f.Phone.PhoneNumber());
+            // MEMBERS (10)
+            var members = new List<Member>();
 
-            var members = memberFaker.Generate(10);
+            for (int i = 1; i <= 10; i++)
+            {
+                members.Add(new Member
+                {
+                    FullName = $"Member {i}",
+                    Email = $"member{i}@test.com",
+                    Phone = $"12345678{i}"
+                });
+            }
+
             context.Members.AddRange(members);
-            context.SaveChanges(); 
 
-            // Loans (unique books only)
-            var random = new Random();
+            context.SaveChanges();
 
-            var loanBooks = books
-                .OrderBy(x => random.Next())
-                .Take(10)
-                .ToList();
-
+            // LOANS (15)
             var loans = new List<Loan>();
 
-            foreach (var book in loanBooks)
+            for (int i = 0; i < 15; i++)
             {
-                var member = members[random.Next(members.Count)];
+                var book = books[i]; // unique books (NO duplicates)
+                var member = members[i % members.Count];
+
+                DateTime loanDate = DateTime.Now.AddDays(-i);
+
+                DateTime? returnedDate = null;
+
+                // CONTROL LOGIC
+                if (i < 5)
+                {
+                    // returned loans
+                    returnedDate = loanDate.AddDays(5);
+                }
+                else if (i < 10)
+                {
+                    // active loans (NOT returned)
+                    returnedDate = null;
+                }
+                else
+                {
+                    // overdue loans
+                    returnedDate = null;
+                }
 
                 var loan = new Loan
                 {
-                    // DO NOT SET Id
                     BookId = book.Id,
                     MemberId = member.Id,
-                    LoanDate = DateTime.Now.AddDays(-random.Next(1, 10)),
-                    DueDate = DateTime.Now.AddDays(random.Next(5, 15)),
-                    ReturnedDate = null
+                    LoanDate = loanDate,
+                    DueDate = loanDate.AddDays(7),
+                    ReturnedDate = returnedDate
                 };
 
-                book.IsAvailable = false;
+                // update availability
+                if (returnedDate == null)
+                {
+                    book.IsAvailable = false;
+                }
 
                 loans.Add(loan);
             }
 
             context.Loans.AddRange(loans);
+
             context.SaveChanges();
         }
 
