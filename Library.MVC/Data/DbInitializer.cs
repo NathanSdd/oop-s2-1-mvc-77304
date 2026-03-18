@@ -1,5 +1,7 @@
 ﻿using Bogus;
 using Library.Domain;
+using Microsoft.AspNetCore.Identity;
+
 
 namespace Library.MVC.Data
 {
@@ -71,5 +73,29 @@ namespace Library.MVC.Data
             context.Loans.AddRange(loans);
             context.SaveChanges();
         }
+
+        public static async Task SeedAdmin(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager)
+        {
+        // Create Admin role if it doesn't exist
+        if (!await roleManager.RoleExistsAsync("Admin"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("Admin"));
+        }
+
+        // Create Admin user
+        var admin = await userManager.FindByEmailAsync("admin@test.com");
+
+        if (admin == null)
+        {
+            admin = new IdentityUser
+            {
+                UserName = "admin@test.com",
+                Email = "admin@test.com"
+            };
+
+            await userManager.CreateAsync(admin, "Admin123!");
+            await userManager.AddToRoleAsync(admin, "Admin");
+        }
     }
+}
 }
