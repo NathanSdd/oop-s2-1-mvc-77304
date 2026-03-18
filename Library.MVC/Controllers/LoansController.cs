@@ -177,9 +177,20 @@ namespace Library.MVC.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var loan = await _context.Loans.FindAsync(id);
+
             if (loan != null)
             {
+                // Get related book
+                var book = await _context.Books.FindAsync(loan.BookId);
+
+                // Remove loan
                 _context.Loans.Remove(loan);
+
+                // Update book availability
+                if (book != null)
+                {
+                    book.IsAvailable = true;
+                }
             }
 
             await _context.SaveChangesAsync();

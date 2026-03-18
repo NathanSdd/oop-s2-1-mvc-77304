@@ -7,11 +7,19 @@ namespace Library.MVC.Data
     {
         public static void Seed(ApplicationDbContext context)
         {
-            if (context.Books.Any()) return; // already seeded
+            if (context.Books.Any() || context.Members.Any() || context.Loans.Any())
+            {
+                return; // DB already seeded
+            }
+            // Clear existing data if needed
+            //context.Loans.RemoveRange(context.Loans);
+            //context.Books.RemoveRange(context.Books);
+            //context.Members.RemoveRange(context.Members);
+            //context.SaveChanges();
 
-            // Books
+            //  Books
             var bookFaker = new Faker<Book>()
-                .RuleFor(b => b.Title, f => f.Lorem.Sentence(3))
+                .RuleFor(b => b.Title, f => f.Commerce.ProductName())
                 .RuleFor(b => b.Author, f => f.Name.FullName())
                 .RuleFor(b => b.Isbn, f => f.Random.Replace("###-##########"))
                 .RuleFor(b => b.Category, f => f.PickRandom("Fiction", "Science", "History"))
@@ -19,6 +27,7 @@ namespace Library.MVC.Data
 
             var books = bookFaker.Generate(20);
             context.Books.AddRange(books);
+            context.SaveChanges(); 
 
             // Members
             var memberFaker = new Faker<Member>()
@@ -28,14 +37,15 @@ namespace Library.MVC.Data
 
             var members = memberFaker.Generate(10);
             context.Members.AddRange(members);
-
-            context.SaveChanges();
+            context.SaveChanges(); 
 
             // Loans (unique books only)
             var random = new Random();
 
-            // pick random subset of books (no duplicates)
-            var loanBooks = books.OrderBy(x => random.Next()).Take(10).ToList();
+            var loanBooks = books
+                .OrderBy(x => random.Next())
+                .Take(10)
+                .ToList();
 
             var loans = new List<Loan>();
 
@@ -45,6 +55,7 @@ namespace Library.MVC.Data
 
                 var loan = new Loan
                 {
+                    // DO NOT SET Id
                     BookId = book.Id,
                     MemberId = member.Id,
                     LoanDate = DateTime.Now.AddDays(-random.Next(1, 10)),
@@ -55,20 +66,6 @@ namespace Library.MVC.Data
                 book.IsAvailable = false;
 
                 loans.Add(loan);
-            }
-
-            context.Loans.AddRange(loans);
-            context.SaveChanges();
-
-            foreach (var loan in loans)
-            {
-                loan.ReturnedDate = null;
-
-                var book = context.Books.Find(loan.BookId);
-                if (book != null)
-                {
-                    book.IsAvailable = false;
-                }
             }
 
             context.Loans.AddRange(loans);
